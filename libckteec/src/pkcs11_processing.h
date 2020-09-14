@@ -101,4 +101,9 @@ CK_RV ck_get_attribute_value(CK_SESSION_HANDLE session,
 			     CK_ATTRIBUTE_PTR attribs,
 			     CK_ULONG count);
 
+CK_RV ck_set_attribute_value(CK_SESSION_HANDLE session,
+			     CK_OBJECT_HANDLE obj,
+			     CK_ATTRIBUTE_PTR attribs,
+			     CK_ULONG count);
+
 #endif /*LIBCKTEEC_PKCS11_PROCESSING_H*/

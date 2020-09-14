@@ -1099,3 +1099,51 @@ bail:
 
 	return rv;
 }
+
+CK_RV ck_set_attribute_value(CK_SESSION_HANDLE session,
+			     CK_OBJECT_HANDLE obj,
+			     CK_ATTRIBUTE_PTR attribs,
+			     CK_ULONG count)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	TEEC_SharedMemory *ctrl = NULL;
+	struct serializer sattr = { };
+	size_t ctrl_size = 0;
+	uint32_t session_handle = session;
+	uint32_t obj_handle = obj;
+	char *buf = NULL;
+
+	if (count && !attribs)
+		return CKR_ARGUMENTS_BAD;
+
+	rv = serialize_ck_attributes(&sattr, attribs, count);
+	if (rv)
+		goto out;
+
+	/* Shm io0: (in/out) [session][obj-handle][attributes] / [status] */
+	ctrl_size = sizeof(session_handle) + sizeof(obj_handle) + sattr.size;
+
+	ctrl = ckteec_alloc_shm(ctrl_size, CKTEEC_SHM_INOUT);
+	if (!ctrl) {
+		rv = CKR_HOST_MEMORY;
+		goto out;
+	}
+
+	buf = ctrl->buffer;
+
+	memcpy(buf, &session_handle, sizeof(session_handle));
+	buf += sizeof(session_handle);
+
+	memcpy(buf, &obj_handle, sizeof(obj_handle));
+	buf += sizeof(obj_handle);
+
+	memcpy(buf, sattr.buffer, sattr.size);
+
+	rv = ckteec_invoke_ctrl(PKCS11_CMD_SET_ATTRIBUTE_VALUE, ctrl);
+
+out:
+	ckteec_free_shm(ctrl);
+	release_serial_object(&sattr);
+
+	return rv;
+}
