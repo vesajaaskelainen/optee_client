@@ -199,15 +199,6 @@ struct CK_ATTRIBUTE {
 #define CKA_SUPPORTED_CMS_ATTRIBUTES	0x0503
 #define CKA_ALLOWED_MECHANISMS		(0x0600 | CKF_ARRAY_ATTRIBUTE)
 
-/*
- * PKCS11 extra vendor identifiers
- *
- * CKA_VENDOR_EC_POINT_X/_Y are used to overcome EC point DER format
- * not supported yet by the PKCS11 TA.
- */
-#define CKA_VENDOR_EC_POINT_X		(0x01000 | CKA_VENDOR_DEFINED)
-#define CKA_VENDOR_EC_POINT_Y		(0x01001 | CKA_VENDOR_DEFINED)
-
 /* Attribute CKA_CLASS refers to a CK_OBJECT_CLASS typed value */
 typedef CK_ULONG CK_OBJECT_CLASS;
 typedef CK_OBJECT_CLASS *CK_OBJECT_CLASS_PTR;
