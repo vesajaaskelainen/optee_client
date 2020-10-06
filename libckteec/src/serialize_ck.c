@@ -415,19 +415,17 @@ static CK_RV deserialize_ck_attribute(struct pkcs11_attribute_head *in,
 
 	/* Specific ulong encoded as 32bit in PKCS11 TA API */
 	if (ck_attr_is_ulong(out->type)) {
-		if (out->ulValueLen != sizeof(CK_ULONG))
+		if (out->ulValueLen < sizeof(CK_ULONG))
 			return CKR_ATTRIBUTE_TYPE_INVALID;
 
 		memcpy(&pkcs11_data32, in->data, sizeof(uint32_t));
+		ck_ulong = pkcs11_data32;
+		memcpy(out->pValue, &ck_ulong, sizeof(CK_ULONG));
+		out->ulValueLen = sizeof(CK_ULONG);
+		return CKR_OK;
 	}
 
 	switch (out->type) {
-	case CKA_CLASS:
-	case CKA_KEY_TYPE:
-	case CKA_KEY_GEN_MECHANISM:
-		ck_ulong = pkcs11_data32;
-		memcpy(out->pValue, &ck_ulong, sizeof(CK_ULONG));
-		break;
 	case CKA_WRAP_TEMPLATE:
 	case CKA_UNWRAP_TEMPLATE:
 		rv = deserialize_indirect_attribute(in, out->pValue);
@@ -439,6 +437,7 @@ static CK_RV deserialize_ck_attribute(struct pkcs11_attribute_head *in,
 	/* Attributes which data value do not need conversion (aside ulong) */
 	default:
 		memcpy(out->pValue, in->data, in->size);
+		out->ulValueLen = in->size;
 		break;
 	}
 
