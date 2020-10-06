@@ -113,6 +113,11 @@ CK_RV ck_guess_key_type(CK_MECHANISM_PTR mecha,
 	int key_type_present = 0;
 	CK_RV rv;
 
+	if (!(mecha && attrs && count && attrs_new_p)) {
+		rv = CKR_ARGUMENTS_BAD;
+		goto bail;
+	}
+
 	for (n = 0; n < *count; n++) {
 		if (attrs[n].type == CKA_KEY_TYPE) {
 			key_type_present = 1;
