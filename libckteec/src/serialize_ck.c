@@ -300,12 +300,12 @@ CK_RV deserialize_ck_attributes(uint8_t *in, CK_ATTRIBUTE_PTR attributes,
 			(struct pkcs11_attribute_head *)(void *)curr_head;
 
 		len = sizeof(*cli_ref);
-		/*
-		 * Can't trust size becuase it was set to reflect
-		 * required buffer.
-		 */
-		if (cur_attr->pValue)
-			len += cli_ref->size;
+		if (cur_attr->pValue) {
+			if (ck_attr_is_ulong(cur_attr->type))
+				len += sizeof(uint32_t);
+			else
+				len += cur_attr->ulValueLen;
+		}
 
 		rv = deserialize_ck_attribute(cli_ref, cur_attr);
 		if (rv)
