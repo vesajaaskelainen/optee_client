@@ -38,4 +38,15 @@ const char *cko2str(CK_OBJECT_CLASS id);
 /* Return a pointer to a string buffer of "CKK_xxx\0" key type ID */
 const char *ckk2str(CK_KEY_TYPE id);
 
+/*
+ * Deprecated helper functions
+ */
+char *ck_slot_flag2str(CK_ULONG flags);
+char *ck_token_flag2str(CK_ULONG flags);
+char *ck_mecha_flag2str(CK_ULONG flags);
+
+const char *ckclass2str(CK_ULONG id);
+const char *cktype2str(CK_ULONG id, CK_ULONG class);
+const char *ta_cmd2str(unsigned int id);
+
 #endif /*LIBCKTEEC_CK_DEBUG_H*/

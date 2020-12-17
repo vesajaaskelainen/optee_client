@@ -5,14 +5,26 @@
 
 #include <ck_debug.h>
 #include <pkcs11.h>
+#include <pkcs11_ta.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
 #include "local_utils.h"
 
+/* CK2STR_ENTRY_TBL will soon deprecate in favor to CK2STR_ENTRY */
+#define CK2STR_ENTRY_TBL(label)	{ .id = label, .string = #label }
+
 #define CK2STR_ENTRY(id)	case id: return #id
 
+struct ck2str {
+	CK_ULONG id;
+	const char *string;
+};
+
+/*
+ * ckr2str - Return a pointer to a string buffer of "CKR_xxx\0" return value ID
+ */
 const char *ckr2str(CK_RV id)
 {
 	switch (id) {
@@ -125,7 +137,10 @@ const char *ckm2str(CK_MECHANISM_TYPE id)
 	CK2STR_ENTRY(CKM_RSA_PKCS);
 	CK2STR_ENTRY(CKM_RSA_9796);
 	CK2STR_ENTRY(CKM_RSA_X_509);
+	CK2STR_ENTRY(CKM_SHA1_RSA_PKCS);
 	CK2STR_ENTRY(CKM_RSA_PKCS_OAEP);
+	CK2STR_ENTRY(CKM_RSA_PKCS_PSS);
+	CK2STR_ENTRY(CKM_SHA1_RSA_PKCS_PSS);
 	CK2STR_ENTRY(CKM_SHA256_RSA_PKCS);
 	CK2STR_ENTRY(CKM_SHA384_RSA_PKCS);
 	CK2STR_ENTRY(CKM_SHA512_RSA_PKCS);
@@ -142,6 +157,19 @@ const char *ckm2str(CK_MECHANISM_TYPE id)
 	CK2STR_ENTRY(CKM_SHA512_256_HMAC);
 	CK2STR_ENTRY(CKM_SHA512_256_HMAC_GENERAL);
 	CK2STR_ENTRY(CKM_SHA512_256_KEY_DERIVATION);
+	CK2STR_ENTRY(CKM_DES_KEY_GEN);
+	CK2STR_ENTRY(CKM_DES_ECB);
+	CK2STR_ENTRY(CKM_DES_CBC);
+	CK2STR_ENTRY(CKM_DES_MAC);
+	CK2STR_ENTRY(CKM_DES_MAC_GENERAL);
+	CK2STR_ENTRY(CKM_DES_CBC_PAD);
+	CK2STR_ENTRY(CKM_DES3_ECB);
+	CK2STR_ENTRY(CKM_DES3_CBC);
+	CK2STR_ENTRY(CKM_DES3_MAC);
+	CK2STR_ENTRY(CKM_DES3_MAC_GENERAL);
+	CK2STR_ENTRY(CKM_DES3_CBC_PAD);
+	CK2STR_ENTRY(CKM_DES3_CMAC_GENERAL);
+	CK2STR_ENTRY(CKM_DES3_CMAC);
 	CK2STR_ENTRY(CKM_MD5);
 	CK2STR_ENTRY(CKM_MD5_HMAC);
 	CK2STR_ENTRY(CKM_MD5_HMAC_GENERAL);
@@ -163,6 +191,8 @@ const char *ckm2str(CK_MECHANISM_TYPE id)
 	CK2STR_ENTRY(CKM_HOTP_KEY_GEN);
 	CK2STR_ENTRY(CKM_HOTP);
 	CK2STR_ENTRY(CKM_GENERIC_SECRET_KEY_GEN);
+	CK2STR_ENTRY(CKM_MD5_KEY_DERIVATION);
+	CK2STR_ENTRY(CKM_MD2_KEY_DERIVATION);
 	CK2STR_ENTRY(CKM_SHA1_KEY_DERIVATION);
 	CK2STR_ENTRY(CKM_SHA256_KEY_DERIVATION);
 	CK2STR_ENTRY(CKM_SHA384_KEY_DERIVATION);
@@ -206,6 +236,34 @@ const char *ckm2str(CK_MECHANISM_TYPE id)
 			return "Vendor defined";
 		else
 			return "Unknown ID";
+	}
+}
+
+const char *ta_cmd2str(unsigned int id)
+{
+	switch (id) {
+	CK2STR_ENTRY(PKCS11_CMD_PING);
+	CK2STR_ENTRY(PKCS11_CMD_SLOT_LIST);
+	CK2STR_ENTRY(PKCS11_CMD_SLOT_INFO);
+	CK2STR_ENTRY(PKCS11_CMD_TOKEN_INFO);
+	CK2STR_ENTRY(PKCS11_CMD_MECHANISM_IDS);
+	CK2STR_ENTRY(PKCS11_CMD_MECHANISM_INFO);
+	CK2STR_ENTRY(PKCS11_CMD_INIT_TOKEN);
+	CK2STR_ENTRY(PKCS11_CMD_INIT_PIN);
+	CK2STR_ENTRY(PKCS11_CMD_SET_PIN);
+	CK2STR_ENTRY(PKCS11_CMD_OPEN_SESSION);
+	CK2STR_ENTRY(PKCS11_CMD_CLOSE_SESSION);
+	CK2STR_ENTRY(PKCS11_CMD_SESSION_INFO);
+	CK2STR_ENTRY(PKCS11_CMD_CREATE_OBJECT);
+	CK2STR_ENTRY(PKCS11_CMD_DESTROY_OBJECT);
+	CK2STR_ENTRY(PKCS11_CMD_ENCRYPT_INIT);
+	CK2STR_ENTRY(PKCS11_CMD_DECRYPT_INIT);
+	CK2STR_ENTRY(PKCS11_CMD_ENCRYPT_UPDATE);
+	CK2STR_ENTRY(PKCS11_CMD_DECRYPT_UPDATE);
+	CK2STR_ENTRY(PKCS11_CMD_DECRYPT_FINAL);
+	CK2STR_ENTRY(PKCS11_CMD_ENCRYPT_FINAL);
+	default:
+		return "Unknown command";
 	}
 }
 
@@ -453,4 +511,163 @@ const char *ckk2str(CK_KEY_TYPE id)
 	default:
 		return "Unknown";
 	}
+}
+
+enum ck_debug_flag_type {
+	CKDBG_SLOT,
+	CKDBG_TOKEN,
+	CKDBG_KEY,
+	CKDBG_CERTIF,
+	CKDBG_MECHA,
+};
+
+static char *__flag2str(CK_ULONG flags, enum ck_debug_flag_type type)
+{
+	char *str = NULL;
+	size_t size = 0;
+	int mask = 1;
+
+	for (mask = 1; flags && mask; flags &= ~mask, mask = mask << 1) {
+		char const *label = NULL;
+		size_t label_size;
+		char *nstr;
+
+		if (!(flags & mask))
+			continue;
+
+		switch(type) {
+		case CKDBG_SLOT:
+			label = slot_ckf2str(mask);
+			break;
+		case CKDBG_TOKEN:
+			label = token_ckf2str(mask);
+			break;
+		case CKDBG_MECHA:
+			label = mecha_ckf2str(mask);
+			break;
+		default:
+			return NULL;
+		}
+
+		if (!label)
+			continue;
+
+		/* 4 digit prefix "CKF_" is not dumped */
+		if (!memcmp(label, "CKF_", 4))
+			label += 4;
+
+		/* Extra space digit */
+		label_size = strlen(label) + 1;
+
+		/* Always allocate 1 more digit for terminal '\0' */
+		nstr = realloc(str, size + label_size + 1);
+		if (!nstr) {
+			free(str);
+			return NULL;
+		}
+
+		snprintf(nstr + size, label_size + 1, "%s ", label);
+		str = nstr;
+		size += label_size;
+	}
+
+	return str;
+}
+
+char *ck_slot_flag2str(CK_ULONG flags)
+{
+	return __flag2str(flags, CKDBG_SLOT);
+}
+
+char *ck_token_flag2str(CK_ULONG flags)
+{
+	return __flag2str(flags, CKDBG_TOKEN);
+}
+
+char *ck_mecha_flag2str(CK_ULONG flags)
+{
+	return __flag2str(flags, CKDBG_MECHA);
+}
+
+static struct ck2str class2str_table[] = {
+	CK2STR_ENTRY_TBL(CKO_DATA),
+	CK2STR_ENTRY_TBL(CKO_CERTIFICATE),
+	CK2STR_ENTRY_TBL(CKO_PUBLIC_KEY),
+	CK2STR_ENTRY_TBL(CKO_PRIVATE_KEY),
+	CK2STR_ENTRY_TBL(CKO_SECRET_KEY),
+	CK2STR_ENTRY_TBL(CKO_HW_FEATURE),
+	CK2STR_ENTRY_TBL(CKO_DOMAIN_PARAMETERS),
+	CK2STR_ENTRY_TBL(CKO_MECHANISM),
+	CK2STR_ENTRY_TBL(CKO_OTP_KEY),
+	CK2STR_ENTRY_TBL(CKO_VENDOR_DEFINED),
+};
+
+const char *ckclass2str(CK_ULONG id)
+{
+	const int count = sizeof(class2str_table) / sizeof(struct ck2str);
+	int n;
+
+	for (n = 0; n < count; n++)
+		if (id == class2str_table[n].id)
+			return class2str_table[n].string;
+
+	return NULL;
+}
+
+static struct ck2str symkey2str_table[] = {
+	CK2STR_ENTRY_TBL(CKK_RSA),
+	CK2STR_ENTRY_TBL(CKK_DSA),
+	CK2STR_ENTRY_TBL(CKK_DH),
+	CK2STR_ENTRY_TBL(CKK_ECDSA),
+	CK2STR_ENTRY_TBL(CKK_EC),
+	CK2STR_ENTRY_TBL(CKK_GENERIC_SECRET),
+	CK2STR_ENTRY_TBL(CKK_DES),
+	CK2STR_ENTRY_TBL(CKK_DES2),
+	CK2STR_ENTRY_TBL(CKK_DES3),
+	CK2STR_ENTRY_TBL(CKK_AES),
+	CK2STR_ENTRY_TBL(CKK_HOTP),
+	CK2STR_ENTRY_TBL(CKK_MD5_HMAC),
+	CK2STR_ENTRY_TBL(CKK_SHA_1_HMAC),
+	CK2STR_ENTRY_TBL(CKK_SHA256_HMAC),
+	CK2STR_ENTRY_TBL(CKK_SHA384_HMAC),
+	CK2STR_ENTRY_TBL(CKK_SHA512_HMAC),
+	CK2STR_ENTRY_TBL(CKK_SHA224_HMAC),
+	CK2STR_ENTRY_TBL(CKK_VENDOR_DEFINED),
+};
+
+const char *cktype2str(CK_ULONG id, CK_ULONG class)
+{
+	int count;
+	struct ck2str *table;
+	int n;
+
+	switch (class) {
+	case CKO_DATA:
+		/* No type for data object */
+		return NULL;
+	case CKO_SECRET_KEY:
+		count = sizeof(symkey2str_table);
+		table = symkey2str_table;
+		break;
+	case CKO_MECHANISM:
+		return ckm2str(id);
+	case CKO_CERTIFICATE:
+	case CKO_DOMAIN_PARAMETERS:
+	case CKO_HW_FEATURE:
+	case CKO_PUBLIC_KEY:
+	case CKO_PRIVATE_KEY:
+	case CKO_OTP_KEY:
+		/* Not supported */
+		return NULL;
+	default:
+		/* Unknwon */
+		return NULL;
+	}
+
+	count /= sizeof(struct ck2str);
+	for (n = 0; n < count; n++)
+		if (id == table[n].id)
+			return table[n].string;
+
+	return NULL;
 }

@@ -199,6 +199,15 @@ struct CK_ATTRIBUTE {
 #define CKA_SUPPORTED_CMS_ATTRIBUTES	0x0503
 #define CKA_ALLOWED_MECHANISMS		(0x0600 | CKF_ARRAY_ATTRIBUTE)
 
+/*
+ * PKCS11 extra vendor identifiers
+ *
+ * CKA_VENDOR_EC_POINT_X/_Y are used to overcome EC point DER format
+ * not supported yet by the PKCS11 TA.
+ */
+#define CKA_VENDOR_EC_POINT_X		(0x01000 | CKA_VENDOR_DEFINED)
+#define CKA_VENDOR_EC_POINT_Y		(0x01001 | CKA_VENDOR_DEFINED)
+
 /* Attribute CKA_CLASS refers to a CK_OBJECT_CLASS typed value */
 typedef CK_ULONG CK_OBJECT_CLASS;
 typedef CK_OBJECT_CLASS *CK_OBJECT_CLASS_PTR;
@@ -231,6 +240,8 @@ typedef CK_KEY_TYPE *CK_KEY_TYPE_PTR;
 #define CKK_ECDSA			0x003
 #define CKK_EC				0x003
 #define CKK_GENERIC_SECRET		0x010
+#define CKK_DES				0x013
+#define CKK_DES2			0x014
 #define CKK_DES3			0x015
 #define CKK_AES				0x01f
 #define CKK_HOTP			0x023
@@ -262,7 +273,10 @@ typedef CK_MECHANISM_TYPE *CK_MECHANISM_TYPE_PTR;
 #define CKM_RSA_PKCS			0x00001
 #define CKM_RSA_9796			0x00002
 #define CKM_RSA_X_509			0x00003
+#define CKM_SHA1_RSA_PKCS		0x00006
 #define CKM_RSA_PKCS_OAEP		0x00009
+#define CKM_RSA_PKCS_PSS		0x0000d
+#define CKM_SHA1_RSA_PKCS_PSS		0x0000e
 #define CKM_SHA256_RSA_PKCS		0x00040
 #define CKM_SHA384_RSA_PKCS		0x00041
 #define CKM_SHA512_RSA_PKCS		0x00042
@@ -279,6 +293,12 @@ typedef CK_MECHANISM_TYPE *CK_MECHANISM_TYPE_PTR;
 #define CKM_SHA512_256_HMAC		0x0004d
 #define CKM_SHA512_256_HMAC_GENERAL	0x0004e
 #define CKM_SHA512_256_KEY_DERIVATION	0x0004f
+#define CKM_DES_KEY_GEN			0x00120
+#define CKM_DES_ECB			0x00121
+#define CKM_DES_CBC			0x00122
+#define CKM_DES_MAC			0x00123
+#define CKM_DES_MAC_GENERAL		0x00124
+#define CKM_DES_CBC_PAD			0x00125
 #define CKM_DES3_ECB			0x00132
 #define CKM_DES3_CBC			0x00133
 #define CKM_DES3_MAC			0x00134
@@ -395,11 +415,52 @@ struct CK_MECHANISM {
 	CK_ULONG		ulParameterLen;
 };
 
+/* Key diversification identifiers */
+typedef CK_ULONG CK_EC_KDF_TYPE;
+
+/* Values for type CK_EC_KDF_TYPE */
+#define CKD_NULL			0x0001
+#define CKD_SHA1_KDF			0x0002
+#define CKD_SHA1_KDF_ASN1		0x0003
+#define CKD_SHA1_KDF_CONCATENATE	0x0004
+#define CKD_SHA224_KDF			0x0005
+#define CKD_SHA256_KDF			0x0006
+#define CKD_SHA384_KDF			0x0007
+#define CKD_SHA512_KDF			0x0008
+#define CKD_CPDIVERSIFY_KDF		0x0009
+
+typedef CK_ULONG CK_RSA_PKCS_MGF_TYPE;
+
+/* Values for type CK_RSA_PKCS_MGF_TYPE */
+#define CKG_MGF1_SHA1		0x0001UL
+#define CKG_MGF1_SHA224		0x0005UL
+#define CKG_MGF1_SHA256		0x0002UL
+#define CKG_MGF1_SHA384		0x0003UL
+#define CKG_MGF1_SHA512		0x0004UL
+
+typedef CK_ULONG CK_RSA_PKCS_OAEP_SOURCE_TYPE;
+
+/* Values for type CK_RSA_PKCS_OAEP_SOURCE_TYPE */
+#define CKZ_DATA_SPECIFIED	0x0001UL
+
 /* MAC General parameters */
 typedef CK_ULONG CK_MAC_GENERAL_PARAMS;
 typedef CK_MAC_GENERAL_PARAMS *CK_MAC_GENERAL_PARAMS_PTR;
 
-/* AES CBC encryption parameters */
+/*
+ * AES derivation by ECB encryption parameters: uses the generic
+ * structure CK_KEY_DERIVATION_STRING_DATA.
+ */
+typedef struct CK_KEY_DERIVATION_STRING_DATA	CK_KEY_DERIVATION_STRING_DATA;
+typedef struct CK_KEY_DERIVATION_STRING_DATA
+					*CK_KEY_DERIVATION_STRING_DATA_PTR;
+
+struct CK_KEY_DERIVATION_STRING_DATA {
+	CK_BYTE_PTR		pData;
+	CK_ULONG		ulLen;
+};
+
+/* AES derivation by CBC encryption parameters */
 typedef struct CK_AES_CBC_ENCRYPT_DATA_PARAMS CK_AES_CBC_ENCRYPT_DATA_PARAMS;
 typedef struct CK_AES_CBC_ENCRYPT_DATA_PARAMS
 					*CK_AES_CBC_ENCRYPT_DATA_PARAMS_PTR;
@@ -444,6 +505,64 @@ struct CK_CCM_PARAMS {
 	CK_ULONG		ulAADLen;
 	CK_ULONG		ulMACLen;
 };
+
+/*
+ * Elliptic curve Diffie-Hellman key derivation
+ * Elliptic curve Diffie-Hellman cofactor key derivation parameters
+ */
+typedef struct CK_ECDH1_DERIVE_PARAMS CK_ECDH1_DERIVE_PARAMS;
+typedef struct CK_ECDH1_DERIVE_PARAMS *CK_ECDH1_DERIVE_PARAMS_PTR;
+
+struct CK_ECDH1_DERIVE_PARAMS {
+	CK_EC_KDF_TYPE		kdf;
+	CK_ULONG		ulSharedDataLen;
+	CK_BYTE_PTR		pSharedData;
+	CK_ULONG		ulPublicDataLen;
+	CK_BYTE_PTR		pPublicData;
+};
+
+/* Parameters for CKM_ECDH_AES_KEY_WRAP */
+typedef struct CK_ECDH_AES_KEY_WRAP_PARAMS CK_ECDH_AES_KEY_WRAP_PARAMS;
+typedef struct CK_ECDH_AES_KEY_WRAP_PARAMS *CK_ECDH_AES_KEY_WRAP_PARAMS_PTR;
+
+struct CK_ECDH_AES_KEY_WRAP_PARAMS {
+	CK_ULONG		ulAESKeyBits;
+	CK_EC_KDF_TYPE		kdf;
+	CK_ULONG		ulSharedDataLen;
+	CK_BYTE_PTR		pSharedData;
+};
+
+/* Parameters for CKM_RSA_PKCS_OAEP */
+typedef struct CK_RSA_PKCS_OAEP_PARAMS CK_RSA_PKCS_OAEP_PARAMS;
+typedef struct CK_RSA_PKCS_OAEP_PARAMS *CK_RSA_PKCS_OAEP_PARAMS_PTR;
+
+struct CK_RSA_PKCS_OAEP_PARAMS {
+	CK_MECHANISM_TYPE	hashAlg;
+	CK_RSA_PKCS_MGF_TYPE	mgf;
+	CK_RSA_PKCS_OAEP_SOURCE_TYPE source;
+	CK_VOID_PTR		pSourceData;
+	CK_ULONG		ulSourceDataLen;
+};
+
+/* Parameters for CKM_RSA_PKCS_PSS */
+typedef struct CK_RSA_PKCS_PSS_PARAMS CK_RSA_PKCS_PSS_PARAMS;
+typedef struct CK_RSA_PKCS_PSS_PARAMS *CK_RSA_PKCS_PSS_PARAMS_PTR;
+
+struct CK_RSA_PKCS_PSS_PARAMS {
+	CK_MECHANISM_TYPE	hashAlg;
+	CK_RSA_PKCS_MGF_TYPE	mgf;
+	CK_ULONG		sLen;
+};
+
+/* Parameters for CKM_RSA_AES_KEY_WRAP */
+typedef struct CK_RSA_AES_KEY_WRAP_PARAMS CK_RSA_AES_KEY_WRAP_PARAMS;
+typedef struct CK_RSA_AES_KEY_WRAP_PARAMS *CK_RSA_AES_KEY_WRAP_PARAMS_PTR;
+
+struct CK_RSA_AES_KEY_WRAP_PARAMS {
+	CK_ULONG		ulAESKeyBits;
+	CK_RSA_PKCS_OAEP_PARAMS_PTR pOAEPParams;
+};
+
 
 /*
  * PKCS#11 return values

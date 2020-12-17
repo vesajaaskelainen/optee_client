@@ -3,12 +3,16 @@
  * Copyright (c) 2017-2020, Linaro Limited
  */
 
+#include <assert.h>
 #include <pkcs11.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 #include "ck_helpers.h"
 #include "invoke_ta.h"
+#include "local_utils.h"
+#include "ck_helpers.h"
 #include "pkcs11_processing.h"
 #include "pkcs11_token.h"
 
@@ -515,14 +519,18 @@ CK_RV C_GetObjectSize(CK_SESSION_HANDLE hSession,
 		      CK_OBJECT_HANDLE hObject,
 		      CK_ULONG_PTR pulSize)
 {
-	(void)hSession;
-	(void)hObject;
-	(void)pulSize;
+	CK_RV rv = CKR_CRYPTOKI_NOT_INITIALIZED;
 
-	if (!lib_initiated())
-		return CKR_CRYPTOKI_NOT_INITIALIZED;
+	if (lib_initiated())
+		rv = ck_get_object_size(hSession, hObject, pulSize);
 
-	return CKR_FUNCTION_NOT_SUPPORTED;
+	ASSERT_CK_RV(rv, CKR_ARGUMENTS_BAD, CKR_CRYPTOKI_NOT_INITIALIZED,
+		     CKR_DEVICE_ERROR, CKR_DEVICE_MEMORY, CKR_DEVICE_REMOVED,
+		     CKR_FUNCTION_FAILED, CKR_GENERAL_ERROR, CKR_HOST_MEMORY,
+		     CKR_INFORMATION_SENSITIVE, CKR_OBJECT_HANDLE_INVALID,
+		     CKR_OK, CKR_SESSION_CLOSED, CKR_SESSION_HANDLE_INVALID);
+
+	return rv;
 }
 
 CK_RV C_GetAttributeValue(CK_SESSION_HANDLE hSession,
@@ -530,15 +538,20 @@ CK_RV C_GetAttributeValue(CK_SESSION_HANDLE hSession,
 			  CK_ATTRIBUTE_PTR pTemplate,
 			  CK_ULONG ulCount)
 {
-	(void)hSession;
-	(void)hObject;
-	(void)pTemplate;
-	(void)ulCount;
+	CK_RV rv = CKR_CRYPTOKI_NOT_INITIALIZED;
 
-	if (!lib_initiated())
-		return CKR_CRYPTOKI_NOT_INITIALIZED;
+	if (lib_initiated())
+		rv = ck_get_attribute_value(hSession, hObject, pTemplate, ulCount);
 
-	return CKR_FUNCTION_NOT_SUPPORTED;
+	ASSERT_CK_RV(rv, CKR_ARGUMENTS_BAD, CKR_ATTRIBUTE_SENSITIVE,
+		     CKR_ATTRIBUTE_TYPE_INVALID, CKR_BUFFER_TOO_SMALL,
+		     CKR_CRYPTOKI_NOT_INITIALIZED, CKR_DEVICE_ERROR,
+		     CKR_DEVICE_MEMORY, CKR_DEVICE_REMOVED,
+		     CKR_FUNCTION_FAILED, CKR_GENERAL_ERROR, CKR_HOST_MEMORY,
+		     CKR_OBJECT_HANDLE_INVALID, CKR_OK, CKR_SESSION_CLOSED,
+		     CKR_SESSION_HANDLE_INVALID);
+
+	return rv;
 }
 
 CK_RV C_SetAttributeValue(CK_SESSION_HANDLE hSession,
@@ -561,14 +574,19 @@ CK_RV C_FindObjectsInit(CK_SESSION_HANDLE hSession,
 			CK_ATTRIBUTE_PTR pTemplate,
 			CK_ULONG ulCount)
 {
-	(void)hSession;
-	(void)pTemplate;
-	(void)ulCount;
+	CK_RV rv = CKR_CRYPTOKI_NOT_INITIALIZED;
 
-	if (!lib_initiated())
-		return CKR_CRYPTOKI_NOT_INITIALIZED;
+	if (lib_initiated())
+		rv = ck_find_objects_init(hSession, pTemplate, ulCount);
 
-	return CKR_FUNCTION_NOT_SUPPORTED;
+	ASSERT_CK_RV(rv, CKR_ARGUMENTS_BAD, CKR_ATTRIBUTE_TYPE_INVALID,
+		     CKR_ATTRIBUTE_VALUE_INVALID, CKR_CRYPTOKI_NOT_INITIALIZED,
+		     CKR_DEVICE_ERROR, CKR_DEVICE_MEMORY, CKR_DEVICE_REMOVED,
+		     CKR_FUNCTION_FAILED, CKR_GENERAL_ERROR, CKR_HOST_MEMORY,
+		     CKR_OK, CKR_OPERATION_ACTIVE, CKR_PIN_EXPIRED,
+		     CKR_SESSION_CLOSED, CKR_SESSION_HANDLE_INVALID);
+
+	return rv;
 }
 
 CK_RV C_FindObjects(CK_SESSION_HANDLE hSession,
@@ -577,25 +595,35 @@ CK_RV C_FindObjects(CK_SESSION_HANDLE hSession,
 		    CK_ULONG_PTR pulObjectCount)
 
 {
-	(void)hSession;
-	(void)phObject;
-	(void)ulMaxObjectCount;
-	(void)pulObjectCount;
+	CK_RV rv = CKR_CRYPTOKI_NOT_INITIALIZED;
 
-	if (!lib_initiated())
-		return CKR_CRYPTOKI_NOT_INITIALIZED;
+	if (lib_initiated())
+		rv = ck_find_objects(hSession, phObject,
+				     ulMaxObjectCount, pulObjectCount);
 
-	return CKR_FUNCTION_NOT_SUPPORTED;
+	ASSERT_CK_RV(rv, CKR_ARGUMENTS_BAD, CKR_CRYPTOKI_NOT_INITIALIZED,
+		     CKR_DEVICE_ERROR, CKR_DEVICE_MEMORY, CKR_DEVICE_REMOVED,
+		     CKR_FUNCTION_FAILED, CKR_GENERAL_ERROR, CKR_HOST_MEMORY,
+		     CKR_OK, CKR_OPERATION_NOT_INITIALIZED, CKR_SESSION_CLOSED,
+		     CKR_SESSION_HANDLE_INVALID);
+
+	return rv;
 }
 
 CK_RV C_FindObjectsFinal(CK_SESSION_HANDLE hSession)
 {
-	(void)hSession;
+	CK_RV rv = CKR_CRYPTOKI_NOT_INITIALIZED;
 
-	if (!lib_initiated())
-		return CKR_CRYPTOKI_NOT_INITIALIZED;
+	if (lib_initiated())
+		rv = ck_find_objects_final(hSession);
 
-	return CKR_FUNCTION_NOT_SUPPORTED;
+	ASSERT_CK_RV(rv, CKR_CRYPTOKI_NOT_INITIALIZED, CKR_DEVICE_ERROR,
+		     CKR_DEVICE_MEMORY, CKR_DEVICE_REMOVED, CKR_FUNCTION_FAILED,
+		     CKR_GENERAL_ERROR, CKR_HOST_MEMORY, CKR_OK,
+		     CKR_OPERATION_NOT_INITIALIZED, CKR_SESSION_CLOSED,
+		     CKR_SESSION_HANDLE_INVALID);
+
+	return rv;
 }
 
 CK_RV C_EncryptInit(CK_SESSION_HANDLE hSession,
@@ -1175,16 +1203,25 @@ CK_RV C_GenerateKey(CK_SESSION_HANDLE hSession,
 		    CK_ULONG ulCount,
 		    CK_OBJECT_HANDLE_PTR phKey)
 {
-	(void)hSession;
-	(void)pMechanism;
-	(void)pTemplate;
-	(void)ulCount;
-	(void)phKey;
+	CK_RV rv = CKR_CRYPTOKI_NOT_INITIALIZED;
 
-	if (!lib_initiated())
-		return CKR_CRYPTOKI_NOT_INITIALIZED;
+	if (lib_initiated())
+		rv = ck_generate_key(hSession, pMechanism, pTemplate, ulCount,
+				     phKey);
 
-	return CKR_FUNCTION_NOT_SUPPORTED;
+	ASSERT_CK_RV(rv, CKR_ARGUMENTS_BAD, CKR_ATTRIBUTE_READ_ONLY,
+		     CKR_ATTRIBUTE_TYPE_INVALID, CKR_ATTRIBUTE_VALUE_INVALID,
+		     CKR_CRYPTOKI_NOT_INITIALIZED, CKR_CURVE_NOT_SUPPORTED,
+		     CKR_DEVICE_ERROR, CKR_DEVICE_MEMORY, CKR_DEVICE_REMOVED,
+		     CKR_FUNCTION_CANCELED, CKR_FUNCTION_FAILED,
+		     CKR_GENERAL_ERROR, CKR_HOST_MEMORY, CKR_MECHANISM_INVALID,
+		     CKR_MECHANISM_PARAM_INVALID, CKR_OK, CKR_OPERATION_ACTIVE,
+		     CKR_PIN_EXPIRED, CKR_SESSION_CLOSED,
+		     CKR_SESSION_HANDLE_INVALID, CKR_SESSION_READ_ONLY,
+		     CKR_TEMPLATE_INCOMPLETE, CKR_TEMPLATE_INCONSISTENT,
+		     CKR_TOKEN_WRITE_PROTECTED, CKR_USER_NOT_LOGGED_IN);
+
+	return rv;
 }
 
 CK_RV C_GenerateKeyPair(CK_SESSION_HANDLE hSession,
@@ -1196,19 +1233,48 @@ CK_RV C_GenerateKeyPair(CK_SESSION_HANDLE hSession,
 			CK_OBJECT_HANDLE_PTR phPublicKey,
 			CK_OBJECT_HANDLE_PTR phPrivateKey)
 {
-	(void)hSession;
-	(void)pMechanism;
-	(void)pPublicKeyTemplate;
-	(void)ulPublicKeyAttributeCount;
-	(void)pPrivateKeyTemplate;
-	(void)ulPrivateKeyAttributeCount;
-	(void)phPublicKey;
-	(void)phPrivateKey;
+	CK_RV rv = CKR_CRYPTOKI_NOT_INITIALIZED;
+	CK_ATTRIBUTE_PTR pub_attribs_n = NULL;
+	CK_ATTRIBUTE_PTR priv_attribs_n = NULL;
 
 	if (!lib_initiated())
-		return CKR_CRYPTOKI_NOT_INITIALIZED;
+		goto bail;
 
-	return CKR_FUNCTION_NOT_SUPPORTED;
+	rv = ck_guess_key_type(pMechanism, pPublicKeyTemplate,
+			       &ulPublicKeyAttributeCount, &pub_attribs_n);
+	if (rv != CKR_OK)
+		goto bail;
+
+	rv = ck_guess_key_type(pMechanism, pPrivateKeyTemplate,
+			       &ulPrivateKeyAttributeCount, &priv_attribs_n);
+	if (rv != CKR_OK)
+		goto bail;
+
+	rv = ck_generate_key_pair(hSession, pMechanism,
+				  pub_attribs_n, ulPublicKeyAttributeCount,
+				  priv_attribs_n, ulPrivateKeyAttributeCount,
+				  phPublicKey, phPrivateKey);
+
+bail:
+	if (pub_attribs_n)
+		free(pub_attribs_n);
+	if (priv_attribs_n)
+		free(priv_attribs_n);
+
+	ASSERT_CK_RV(rv, CKR_ARGUMENTS_BAD,CKR_ATTRIBUTE_READ_ONLY,
+		     CKR_ATTRIBUTE_TYPE_INVALID, CKR_ATTRIBUTE_VALUE_INVALID,
+		     CKR_CRYPTOKI_NOT_INITIALIZED, CKR_CURVE_NOT_SUPPORTED,
+		     CKR_DEVICE_ERROR, CKR_DEVICE_MEMORY, CKR_DEVICE_REMOVED,
+		     CKR_DOMAIN_PARAMS_INVALID, CKR_FUNCTION_CANCELED,
+		     CKR_FUNCTION_FAILED, CKR_GENERAL_ERROR, CKR_HOST_MEMORY,
+		     CKR_MECHANISM_INVALID, CKR_MECHANISM_PARAM_INVALID,
+		     CKR_OK, CKR_OPERATION_ACTIVE, CKR_PIN_EXPIRED,
+		     CKR_SESSION_CLOSED, CKR_SESSION_HANDLE_INVALID,
+		     CKR_SESSION_READ_ONLY, CKR_TEMPLATE_INCOMPLETE,
+		     CKR_TEMPLATE_INCONSISTENT, CKR_TOKEN_WRITE_PROTECTED,
+		     CKR_USER_NOT_LOGGED_IN);
+
+	return rv;
 }
 
 CK_RV C_WrapKey(CK_SESSION_HANDLE hSession,
@@ -1262,17 +1328,28 @@ CK_RV C_DeriveKey(CK_SESSION_HANDLE hSession,
 		  CK_ULONG ulCount,
 		  CK_OBJECT_HANDLE_PTR phKey)
 {
-	(void)hSession;
-	(void)pMechanism;
-	(void)hBaseKey;
-	(void)pTemplate;
-	(void)ulCount;
-	(void)phKey;
+	CK_RV rv = CKR_CRYPTOKI_NOT_INITIALIZED;
 
-	if (!lib_initiated())
-		return CKR_CRYPTOKI_NOT_INITIALIZED;
+	if (lib_initiated())
+		rv = ck_derive_key(hSession, pMechanism, hBaseKey, pTemplate,
+				   ulCount, phKey);
 
-	return CKR_FUNCTION_NOT_SUPPORTED;
+	ASSERT_CK_RV(rv, CKR_ARGUMENTS_BAD, CKR_ATTRIBUTE_READ_ONLY,
+		     CKR_ATTRIBUTE_TYPE_INVALID, CKR_ATTRIBUTE_VALUE_INVALID,
+		     CKR_CRYPTOKI_NOT_INITIALIZED, CKR_CURVE_NOT_SUPPORTED,
+		     CKR_DEVICE_ERROR, CKR_DEVICE_MEMORY, CKR_DEVICE_REMOVED,
+		     CKR_DOMAIN_PARAMS_INVALID, CKR_FUNCTION_CANCELED,
+		     CKR_FUNCTION_FAILED, CKR_GENERAL_ERROR, CKR_HOST_MEMORY,
+		     CKR_KEY_HANDLE_INVALID, CKR_KEY_SIZE_RANGE,
+		     CKR_KEY_TYPE_INCONSISTENT, CKR_MECHANISM_INVALID,
+		     CKR_MECHANISM_PARAM_INVALID, CKR_OK,
+		     CKR_OPERATION_ACTIVE, CKR_PIN_EXPIRED,
+		     CKR_SESSION_CLOSED, CKR_SESSION_HANDLE_INVALID,
+		     CKR_SESSION_READ_ONLY, CKR_TEMPLATE_INCOMPLETE,
+		     CKR_TEMPLATE_INCONSISTENT, CKR_TOKEN_WRITE_PROTECTED,
+		     CKR_USER_NOT_LOGGED_IN);
+
+	return rv;
 }
 
 CK_RV C_SeedRandom(CK_SESSION_HANDLE hSession,
