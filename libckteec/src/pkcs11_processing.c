@@ -825,6 +825,7 @@ CK_RV ck_get_attribute_value(CK_SESSION_HANDLE session,
 			     CK_ULONG count)
 {
 	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_RV rv2 = CKR_GENERAL_ERROR;
 	TEEC_SharedMemory *ctrl = NULL;
 	TEEC_SharedMemory *out_shm = NULL;
 	struct serializer sattr;
@@ -870,8 +871,12 @@ CK_RV ck_get_attribute_value(CK_SESSION_HANDLE session,
 	rv = ckteec_invoke_ctrl_out(PKCS11_CMD_GET_ATTRIBUTE_VALUE,
 				       ctrl, out_shm, &out_size);
 
-	if (rv == CKR_OK || rv == CKR_BUFFER_TOO_SMALL) {
-		rv = deserialize_ck_attributes(out_shm->buffer, attribs, count);
+	if (rv == CKR_OK || rv == CKR_ATTRIBUTE_SENSITIVE ||
+	    rv == CKR_ATTRIBUTE_TYPE_INVALID || rv == CKR_BUFFER_TOO_SMALL) {
+		rv2 = deserialize_ck_attributes(out_shm->buffer, attribs,
+						count);
+		if (rv == CKR_OK)
+			rv = rv2;
 	}
 
 bail:

@@ -244,6 +244,11 @@ static CK_RV deserialize_ck_attribute(struct pkcs11_attribute_head *in,
 
 	out->type = in->id;
 
+	if (in->size == (uint32_t)CK_UNAVAILABLE_INFORMATION) {
+		out->ulValueLen = CK_UNAVAILABLE_INFORMATION;
+		return CKR_ATTRIBUTE_TYPE_INVALID;
+	}
+
 	if (out->ulValueLen < in->size) {
 		out->ulValueLen = in->size;
 		return CKR_OK;
@@ -315,7 +320,7 @@ CK_RV deserialize_ck_attributes(uint8_t *in, CK_ATTRIBUTE_PTR attributes,
 		}
 
 		rv = deserialize_ck_attribute(&cli_head, data_ptr, cur_attr);
-		if (rv)
+		if (rv && rv != CKR_ATTRIBUTE_TYPE_INVALID)
 			return rv;
 	}
 
