@@ -349,6 +349,9 @@ CK_RV deserialize_ck_attributes(uint8_t *in, CK_ATTRIBUTE_PTR attributes,
 		if (cur_attr->pValue) {
 			if (ck_attr_is_ulong(cur_attr->type))
 				len += sizeof(uint32_t);
+			else if (cur_attr->type == CKA_ALLOWED_MECHANISMS)
+				len += cur_attr->ulValueLen / sizeof(CK_ULONG) *
+				       sizeof(uint32_t);
 			else
 				len += cur_attr->ulValueLen;
 		}
