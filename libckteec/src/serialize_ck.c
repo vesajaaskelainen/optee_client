@@ -175,13 +175,8 @@ static CK_RV serialize_ck_attribute(struct serializer *obj, CK_ATTRIBUTE *attr)
 			return CKR_HOST_MEMORY;
 
 		type = attr->pValue;
-		for (m = 0; m < n; m++) {
+		for (m = 0; m < n; m++)
 			mech_buf[m] = type[m];
-			if (mech_buf[m] == PKCS11_UNDEFINED_ID) {
-				rv = CKR_MECHANISM_INVALID;
-				goto out;
-			}
-		}
 		pkcs11_pdata = mech_buf;
 		break;
 	/* Attributes which data value do not need conversion (aside ulong) */
